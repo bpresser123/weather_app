@@ -6,25 +6,22 @@
 //  Copyright © 2017 Brian Presser. All rights reserved.
 //
 
+
 import UIKit
 
-class RootViewController: UIViewController {
+class RootViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     enum RootViewType: Int {
-        case now = 0
-        case day
-        case week
+        case Now = 0
+        case Day
+        case Week
         
         static var count: Int {
-            return RootViewType.week.rawValue + 1
+            return RootViewType.Week.rawValue + 1
         }
     }
     
-    //// Mark: - Properties
-    
-    @IBOutlet var collectionView: UICollectionView!
-    
-    fileprivate var aspectRatio: CGFloat {
+    var aspectRatio: CGFloat {
         switch traitCollection.horizontalSizeClass {
         case .compact:
             return 1.0
@@ -33,62 +30,50 @@ class RootViewController: UIViewController {
         }
     }
     
-    fileprivate let minimumInteritemSpacingForSection: CGFloat = 0.0
-    fileprivate let minimumLineSpacingForSection: CGFloat = 0.0
-    fileprivate let insetForSection = UIEdgeInsets()
+    let minimumInteritemSpacingForSection: CGFloat = 0.0
+    let minimumLineSpacingForSection: CGFloat = 0.0
+    let insetForSection = UIEdgeInsets()
     
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        collectionView.collectionViewLayout.invalidateLayout()
-    }
-    //// Mark: - View Life Cycle
+    @IBOutlet var collectionView: UICollectionView!
     
+    private let dataManager = DataManager(baseURL: API.AuthenticatedBaseURL)
+    
+    // MARK: - View Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        setupView()
-    }
-    //// Mark: - View Methods
-    
-    private func setupView() {
-      setupCollectionView()
-    }
-    
-    private func setupCollectionView() {
-        collectionView.register(NowCollectionViewCell.classForCoder(), forCellWithReuseIdentifier: NowCollectionViewCell.reuseIdentifier)
-        collectionView.register(DayCollectionViewCell.classForCoder(), forCellWithReuseIdentifier: DayCollectionViewCell.reuseIdentifier)
-        collectionView.register(WeekCollectionViewCell.classForCoder(), forCellWithReuseIdentifier: WeekCollectionViewCell.reuseIdentifier)
-    }
-}
-    //// Mark: -
-
-  extension RootViewController: UICollectionViewDataSource {
-    
-  func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return RootViewType.count
         
-      }
+        setupView()
+        
+        // Fetch Weather Data
+        dataManager.weatherDataForLocation(latitude: Defaults.Latitude, longitude: Defaults.Longitude) { (response, error) in
+            print(response as Any)
+        }
+    }
+    
+    // MARK: - Collection View Data Source Methods
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return RootViewType.count
+    }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let type = RootViewType(rawValue: indexPath.item) else {
-            fatalError()
+            return UICollectionViewCell()
         }
         
         switch type {
-        case .day:
+        case .Day:
             // Dequeue Reusable Cell
-            return collectionView.dequeueReusableCell(withReuseIdentifier: NowCollectionViewCell.reuseIdentifier, for: indexPath)
-        case .now:
+            return collectionView.dequeueReusableCell(withReuseIdentifier: NowCollectionViewCell.reuseIdentifier, for: indexPath as IndexPath)
+        case .Now:
             // Dequeue Reusable Cell
-            return collectionView.dequeueReusableCell(withReuseIdentifier: DayCollectionViewCell.reuseIdentifier, for: indexPath)
-        case .week:
+            return collectionView.dequeueReusableCell(withReuseIdentifier: DayCollectionViewCell.reuseIdentifier, for: indexPath as IndexPath)
+        case .Week:
             // Dequeue Reusable Cell
-            return collectionView.dequeueReusableCell(withReuseIdentifier: WeekCollectionViewCell.reuseIdentifier, for: indexPath)
+            return collectionView.dequeueReusableCell(withReuseIdentifier: WeekCollectionViewCell.reuseIdentifier, for: indexPath as IndexPath)
         }
-      }
     }
-
-extension RootViewController: UICollectionViewDelegateFlowLayout {
     
+    // MARK: - Collection View Delegate Flow Layout Methods
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let bounds = collectionView.bounds
         
@@ -107,5 +92,21 @@ extension RootViewController: UICollectionViewDelegateFlowLayout {
         return insetForSection
     }
     
+    // MARK: - Content Container Methods
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        collectionView.collectionViewLayout.invalidateLayout()
+    }
+    
+    // MARK: - View Methods
+    private func setupView() {
+        setupCollectionView()
+    }
+    
+    // MARK: -
+    private func setupCollectionView() {
+        collectionView.register(NowCollectionViewCell.classForCoder(), forCellWithReuseIdentifier: NowCollectionViewCell.reuseIdentifier)
+        collectionView.register(DayCollectionViewCell.classForCoder(), forCellWithReuseIdentifier: DayCollectionViewCell.reuseIdentifier)
+        collectionView.register(WeekCollectionViewCell.classForCoder(), forCellWithReuseIdentifier: WeekCollectionViewCell.reuseIdentifier)
+    }
+    
 }
-
